@@ -508,6 +508,9 @@ int avformat_open_input(AVFormatContext **ps, const char *filename, AVInputForma
     if (options)
         av_dict_copy(&tmp, *options, 0);
 
+    if (s->pb) // must be before any goto fail
+        s->flags |= AVFMT_FLAG_CUSTOM_IO;
+
     if ((ret = av_opt_set_dict(s, &tmp)) < 0)
         goto fail;
 
@@ -2674,8 +2677,8 @@ static int get_std_framerate(int i){
  * And there are "variable" fps files this needs to detect as well.
  */
 static int tb_unreliable(AVCodecContext *c){
-    if(   c->time_base.den >= 101L*c->time_base.num
-       || c->time_base.den <    5L*c->time_base.num
+    if(   c->time_base.den >= 101LL*c->time_base.num
+       || c->time_base.den <    5LL*c->time_base.num
 /*       || c->codec_tag == AV_RL32("DIVX")
        || c->codec_tag == AV_RL32("XVID")*/
        || c->codec_tag == AV_RL32("mp4v")
@@ -2698,6 +2701,7 @@ int ff_alloc_extradata(AVCodecContext *avctx, int size)
     int ret;
 
     if (size < 0 || size >= INT32_MAX - FF_INPUT_BUFFER_PADDING_SIZE) {
+        avctx->extradata = NULL;
         avctx->extradata_size = 0;
         return AVERROR(EINVAL);
     }
@@ -4051,6 +4055,7 @@ int avformat_network_deinit(void)
 #if CONFIG_NETWORK
     ff_network_close();
     ff_tls_deinit();
+    ff_network_inited_globally = 0;
 #endif
     return 0;
 }

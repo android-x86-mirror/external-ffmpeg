@@ -115,7 +115,7 @@ static int pic_arrays_init(HEVCContext *s)
     if (!s->tab_ipm || !s->cbf_luma || !s->is_pcm)
         goto fail;
 
-    s->filter_slice_edges = av_malloc(ctb_count);
+    s->filter_slice_edges = av_mallocz(ctb_count);
     s->tab_slice_address  = av_malloc_array(pic_size_in_ctb,
                                       sizeof(*s->tab_slice_address));
     s->qp_y_tab           = av_malloc_array(pic_size_in_ctb,
@@ -2148,7 +2148,8 @@ static int hevc_frame_start(HEVCContext *s)
     if (ret < 0)
         goto fail;
 
-    ff_thread_finish_setup(s->avctx);
+    if (!s->avctx->hwaccel)
+        ff_thread_finish_setup(s->avctx);
 
     return 0;
 fail:
